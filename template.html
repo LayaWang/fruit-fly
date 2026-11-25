@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>果蠅中樞神經系統 3D 傳導路徑瀏覽器｜5 模態 × 12 路徑</title>
+<style>
+:root{
+  --bg:#0b1020; --bg2:#121a30; --panel:#0f172c; --line:#22304f;
+  --tx:#e6edf7; --tx2:#93a4c4; --tx3:#5f7095; --acc:#38bdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
+  font-family:-apple-system,"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif}
+#app{display:grid;grid-template-columns:290px 1fr 330px;height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;overflow-x:hidden}
+#right{border-right:0;border-left:1px solid var(--line)}
+header.top{padding:14px 16px 10px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#16203c,#0f172c)}
+header.top h1{margin:0;font-size:15px;letter-spacing:.4px;line-height:1.45}
+header.top p{margin:6px 0 0;font-size:11px;color:var(--tx3);line-height:1.6}
+.grp{padding:10px 12px 4px}
+.grp>h2{margin:0 0 8px;font-size:11px;color:var(--tx3);letter-spacing:1.4px;font-weight:600}
+.mod{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden;background:#0c1426}
+.mod>button{width:100%;display:flex;align-items:center;gap:9px;padding:9px 11px;background:transparent;
+  border:0;color:var(--tx);cursor:pointer;font-size:13px;text-align:left;font-family:inherit}
+.mod>button:hover{background:#16213c}
+.mod>button .ic{font-size:16px;width:20px;text-align:center}
+.mod>button .ct{margin-left:auto;font-size:10px;color:var(--tx3);background:#1a2540;padding:1px 7px;border-radius:9px}
+.mod>button .cv{font-size:9px;color:var(--tx3);transition:transform .2s}
+.mod.open>button .cv{transform:rotate(90deg)}
+.mod.open>button{background:#16213c;box-shadow:inset 3px 0 0 var(--mc,#38bdf8)}
+.pw{display:none;padding:4px 6px 8px 8px;border-top:1px solid var(--line)}
+.mod.open .pw{display:block}
+.pw button{display:block;width:100%;text-align:left;padding:7px 9px;margin:3px 0;border-radius:7px;
+  border:1px solid transparent;background:#0e1730;color:var(--tx2);cursor:pointer;font-size:11.5px;
+  line-height:1.5;font-family:inherit}
+.pw button:hover{background:#182645;color:var(--tx)}
+.pw button.on{background:var(--mc);color:#08101f;font-weight:700;border-color:#fff3}
+.pw button i{display:block;font-style:normal;font-size:10px;opacity:.75;margin-top:2px}
+.row{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:11.5px;color:var(--tx2)}
+.row label{flex:0 0 62px;color:var(--tx3)}
+.row input[type=range]{flex:1;accent-color:var(--acc);height:16px}
+.row input[type=checkbox]{accent-color:var(--acc);width:15px;height:15px}
+.row select{flex:1;background:#0e1730;color:var(--tx);border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:11.5px;font-family:inherit}
+.btns{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.btns button{flex:1 0 auto;padding:5px 9px;border-radius:6px;border:1px solid var(--line);background:#0e1730;
+  color:var(--tx2);cursor:pointer;font-size:11px;font-family:inherit}
+.btns button:hover{background:#1a2745;color:var(--tx)}
+.btns button.on{background:var(--acc);color:#08101f;font-weight:700;border-color:var(--acc)}
+#stage{position:relative;background:radial-gradient(ellipse at 50% 40%,#16223f 0%,#080d1a 70%)}
+canvas{display:block;width:100%;height:100%;cursor:grab}
+canvas:active{cursor:grabbing}
+#bar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:9px 12px;
+  background:linear-gradient(180deg,rgba(9,14,28,.94),rgba(9,14,28,0));pointer-events:none;z-index:5;flex-wrap:wrap}
+#bar>*{pointer-events:auto}
+#ttl{font-size:13.5px;font-weight:700;margin-right:6px}
+#ttl small{display:block;font-weight:400;font-size:10.5px;color:var(--tx3);margin-top:2px}
+#hud{position:absolute;left:12px;bottom:10px;font-size:10.5px;color:var(--tx3);line-height:1.75;
+  background:rgba(9,14,28,.72);border:1px solid var(--line);border-radius:8px;padding:8px 11px;max-width:330px}
+#hud b{color:var(--tx2)}
+#lgd{position:absolute;right:12px;bottom:10px;font-size:10.5px;color:var(--tx2);line-height:1.9;
+  background:rgba(9,14,28,.72);border:1px solid var(--line);border-radius:8px;padding:8px 11px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+#right .sec{padding:12px 14px;border-bottom:1px solid var(--line)}
+#right h3{margin:0 0 7px;font-size:12px;color:var(--acc);letter-spacing:.5px}
+#right p{margin:0 0 8px;font-size:11.5px;line-height:1.85;color:var(--tx2)}
+.node{border-left:3px solid var(--nc,#38bdf8);background:#0c1426;border-radius:0 7px 7px 0;
+  padding:7px 9px;margin:6px 0;cursor:pointer;transition:.15s}
+.node:hover{background:#16223e}
+.node.on{background:#1b2a4c;box-shadow:0 0 0 1px var(--nc)}
+.node .n1{font-size:11.5px;font-weight:650;line-height:1.5}
+.node .n2{font-size:10px;color:var(--tx3);margin-top:3px;line-height:1.6}
+.node .n3{font-size:10.5px;color:var(--tx2);margin-top:4px;line-height:1.7}
+.tag{display:inline-block;font-size:9.5px;padding:1px 6px;border-radius:5px;margin:2px 4px 0 0;background:#1a2540;color:var(--tx2)}
+.rel{font-size:10px;color:var(--tx3);text-align:center;margin:-2px 0}
+#src{font-size:9.5px;color:var(--tx3);line-height:1.7}
+::-webkit-scrollbar{width:9px}::-webkit-scrollbar-thumb{background:#22304f;border-radius:5px}
+::-webkit-scrollbar-track{background:transparent}
+@media(max-width:1180px){#app{grid-template-columns:250px 1fr 280px}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════ 左側：模態／路徑選單 ══════════ -->
+  <aside id="left">
+    <header class="top">
+      <h1>果蠅中樞神經系統<br>3D 感覺→運動傳導路徑</h1>
+      <p>雄性成蟲全中樞神經連接體<br>5 種感覺模態 × 12 條傳導路徑<br>單位 µm｜STL 與本模型同源</p>
+    </header>
+    <div class="grp"><h2>感覺模態與路徑</h2><div id="menu"></div></div>
+    <div class="grp"><h2>顯示控制</h2>
+      <div class="row"><label>CNS 透明度</label><input id="op" type="range" min="4" max="100" value="30"></div>
+      <div class="row"><label>路徑粗細</label><input id="th" type="range" min="6" max="40" value="16"></div>
+      <div class="row"><label>傳導速度</label><input id="sp" type="range" min="5" max="200" value="70"></div>
+      <div class="row"><label>剖面切割</label><select id="cax">
+        <option value="-1">關閉</option><option value="0">冠狀面（左右）</option>
+        <option value="1" selected>水平面（背腹）</option><option value="2">矢狀面（前後）</option></select></div>
+      <div class="row"><label>切割位置</label><input id="cp" type="range" min="-100" max="100" value="100"></div>
+      <div class="row"><label>選項</label>
+        <label style="flex:1"><input id="cbR" type="checkbox" checked> 腦區標記</label>
+        <label style="flex:1"><input id="cbL" type="checkbox" checked> 名稱</label></div>
+      <div class="row"><label></label>
+        <label style="flex:1"><input id="cbA" type="checkbox"> 自動旋轉</label>
+        <label style="flex:1"><input id="cbO" type="checkbox"> 全部路徑</label></div>
+      <div class="btns">
+        <button id="bPlay">⏸ 暫停</button><button id="bFit">◎ 置中</button><button id="bReset">↺ 重置</button></div>
+      <div class="btns">
+        <button data-v="front">前視</button><button data-v="back">後視</button>
+        <button data-v="left">左側</button><button data-v="right">右側</button>
+        <button data-v="top">背視</button><button data-v="bottom">腹視</button></div>
+    </div>
+  </aside>
+
+  <!-- ══════════ 中央：3D 視窗 ══════════ -->
+  <main id="stage">
+    <div id="bar"><div id="ttl">請選擇左側路徑<small>拖曳旋轉・滾輪縮放・右鍵平移</small></div></div>
+    <canvas id="c"></canvas>
+    <div id="hud"></div>
+    <div id="lgd"></div>
+  </main>
+
+  <!-- ══════════ 右側：路徑資訊 ══════════ -->
+  <aside id="right">
+    <div class="sec"><h3>路徑說明</h3><div id="info"><p style="color:var(--tx3)">選擇任一路徑後，此處顯示行為、神經元層級與性別差異資訊。</p></div></div>
+    <div class="sec"><h3>來源</h3><div id="src"></div></div>
+  </aside>
+</div>
+
+<script>__THREE__</script>
+<script>__MESH__</script>
+<script>__DATA__</script>
+<script>
+"use strict";
+const D = window.CNS_DATA, M = window.CNS_MESH;
+const $ = s => document.querySelector(s);
+const DIM = {male_specific:["#ff4fa3","雄性專有"], female_specific:["#7dd3fc","雌性專有"],
+             dimorphic:["#fbbf24","兩性異形"], isomorphic:["#4ade80","兩性同型"]};
+const REL = {_exc:["#4ade80","興奮"], _inh:["#f87171","抑制"], _unk:["#94a3b8","未定"]};
+
+/* ── 座標對應：模型 +X右 +Y腹 +Z前 → three.js X右 Y上 Z朝視者 ── */
+const CY = 200;                                   // 模型 y 中心（VNC 延伸方向）
+const toV = a => new THREE.Vector3(a[0], -(a[1]-CY), a[2]);
+
+/* ══════════ 場景 ══════════ */
+const stage = $("#stage"), canvas = $("#c");
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.localClippingEnabled = true;
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xbcd4ff, 0x1a2340, 1.15));
+const key = new THREE.DirectionalLight(0xffffff, 1.0); key.position.set(1,0.6,1); scene.add(key);
+const key2 = new THREE.DirectionalLight(0x88aaff, .55); key2.position.set(-1,-.4,-.8); scene.add(key2);
+
+const cam = new THREE.PerspectiveCamera(45, 1, 1, 6000);
+const orbit = {t:new THREE.Vector3(0,0,0), r:760, th:.55, ph:1.15};
+function camUpdate(){
+  const s=Math.sin(orbit.ph);
+  cam.position.set(orbit.t.x+orbit.r*s*Math.sin(orbit.th), orbit.t.y+orbit.r*Math.cos(orbit.ph),
+                   orbit.t.z+orbit.r*s*Math.cos(orbit.th));
+  cam.lookAt(orbit.t);
+}
+
+/* ── CNS 實體網格（與 cns_fly.stl 同一份幾何，Y 軸翻轉對映到 three.js）── */
+const geo = new THREE.BufferGeometry();
+const pos = Float32Array.from(M.v);
+for(let i=1;i<pos.length;i+=3) pos[i] = -(pos[i]-CY);      // y_model → y_three
+geo.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
+geo.setAttribute("color",    new THREE.Float32BufferAttribute(M.c,3));
+const idx = Int32Array.from(M.f);                            // Y 翻轉後互換繞序，維持法線朝外
+for(let i=0;i<idx.length;i+=3){ const t=idx[i+1]; idx[i+1]=idx[i+2]; idx[i+2]=t; }
+geo.setIndex(new THREE.BufferAttribute(idx,1)); geo.computeVertexNormals();
+const clipPlane = new THREE.Plane(new THREE.Vector3(0,-1,0), 1e9);
+const matCNS = new THREE.MeshPhongMaterial({vertexColors:true, transparent:true, opacity:.30,
+  shininess:52, specular:0x334466, side:THREE.DoubleSide, depthWrite:false,
+  clippingPlanes:[clipPlane], clipShadows:false});
+const cns = new THREE.Mesh(geo, matCNS);
+scene.add(cns);
+
+/* ── 腦區標記群組 ── */
+const gRegion = new THREE.Group(); scene.add(gRegion);
+const gPath = new THREE.Group();  scene.add(gPath);
+const gAll  = new THREE.Group();  scene.add(gAll);
+
+function labelSprite(text, color){
+  const c=document.createElement("canvas"), x=c.getContext("2d");
+  c.width=512; c.height=112; x.font="600 46px system-ui,'Noto Sans TC',sans-serif";
+  const w=Math.min(500, x.measureText(text).width+18);
+  x.fillStyle="rgba(9,14,28,.78)"; roundRect(x,4,14,w+16,66,14); x.fill();
+  x.fillStyle=color; x.fillText(text, 16, 62);
+  const t=new THREE.CanvasTexture(c); t.minFilter=THREE.LinearFilter;
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));
+  s.scale.set(150,33,1); return s;
+}
+function roundRect(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);
+  x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath();}
+
+for(const [k,R] of Object.entries(D.regions)){
+  if(k==="eye") continue;
+  const g=new THREE.SphereGeometry(1,16,12);
+  g.scale(R.r[0],R.r[1],R.r[2]); g.translate(R.c[0],-(R.c[1]-CY),R.c[2]);
+  const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:R.color,wireframe:true,
+    transparent:true,opacity:.20,clippingPlanes:[clipPlane]}));
+  m.userData.key=k; gRegion.add(m);
+  const sp=labelSprite(k+" "+R.name.replace(/（.*/,""), R.color);
+  sp.position.copy(toV(R.c)); sp.position.y += R.r[1]+26; sp.userData.key=k; gRegion.add(sp);
+}
+/* 複眼（參考，非 CNS） */
+(()=>{ const R=D.regions.eye;
+  for(const s of [1,-1]){ const g=new THREE.SphereGeometry(1,18,14);
+    g.scale(R.r[0],R.r[1],R.r[2]); g.translate(s*R.c[0],-(R.c[1]-CY),R.c[2]);
+    gRegion.add(new THREE.Mesh(g,new THREE.MeshPhongMaterial({color:0x3a2a10,transparent:true,opacity:.30})));
+  }})();
+
+/* ══════════ 路徑繪製 ══════════ */
+let cur=null, curCurve=null, pulses=[], playing=true, tGlob=0;
+
+function clearG(g){ curCurve=null; pulses=[]; while(g.children.length){ const o=g.children.pop();
+  o.traverse(n=>{ if(n.geometry)n.geometry.dispose(); if(n.material){
+    (Array.isArray(n.material)?n.material:[n.material]).forEach(m=>{if(m.map)m.map.dispose();m.dispose();});}});} }
+
+function dedup(pts){ const o=[]; for(const p of pts){ if(!o.length||o[o.length-1].distanceTo(p)>6) o.push(p);} 
+  if(o.length<2&&pts.length>=2){o.length=0;o.push(pts[0].clone());o.push(pts[pts.length-1].clone());} return o; }
+
+function drawPath(mod, pw){
+  clearG(gPath); pulses=[];
+  const col = new THREE.Color(mod.color);
+  const pts = pw.nodes.map(n=>toV(n.xyz));
+  const cp  = dedup(pts.map(p=>p.clone()));
+  const curve = new THREE.CatmullRomCurve3(cp, false, "catmullrom", .35);
+  curCurve = curve;
+  const R = (+$("#th").value)/10;
+
+  /* 主軸（TubeGeometry，依傳導方向連續） */
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(48,cp.length*26), R, 12, false),
+    new THREE.MeshPhongMaterial({color:col, emissive:col.clone().multiplyScalar(.45),
+      shininess:80, specular:0xffffff}));
+  gPath.add(tube);
+  /* 外光暈 */
+  const halo = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(40,cp.length*20), R*2.4, 10, false),
+    new THREE.MeshBasicMaterial({color:col, transparent:true, opacity:.13, depthWrite:false}));
+  gPath.add(halo);
+
+  /* 傳導方向箭頭 */
+  for(let i=0;i<cp.length-1;i++){
+    const a=cp[i], b=cp[i+1], d=b.clone().sub(a); const L=d.length(); if(L<12) continue;
+    const cn=new THREE.Mesh(new THREE.ConeGeometry(R*2.6, Math.min(26,L*.42), 14),
+      new THREE.MeshPhongMaterial({color:col.clone().lerp(new THREE.Color(0xffffff),.35),
+        emissive:col.clone().multiplyScalar(.3)}));
+    cn.position.copy(a.clone().lerp(b,.62));
+    cn.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), d.normalize());
+    gPath.add(cn);
+  }
+  /* 節點球 + 標籤 */
+  pw.nodes.forEach((n,i)=>{
+    const dc = (DIM[n.dim]||["#cbd5e1","—"])[0];
+    const sz = i===0? 13 : (i===pw.nodes.length-1? 12 : 10);
+    const s=new THREE.Mesh(new THREE.SphereGeometry(sz,20,16),
+      new THREE.MeshPhongMaterial({color:dc, emissive:new THREE.Color(dc).multiplyScalar(.5), shininess:90}));
+    s.position.copy(pts[i]); s.userData={idx:i,node:n}; gPath.add(s);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(sz+4,1.4,8,28),
+      new THREE.MeshBasicMaterial({color:dc,transparent:true,opacity:.55}));
+    ring.position.copy(pts[i]); ring.lookAt(cam.position); ring.userData.ring=true; gPath.add(ring);
+    const sp=labelSprite((i+1)+"  "+n.label, "#e6edf7");
+    sp.position.copy(pts[i]); sp.position.y += sz+30; sp.userData.lbl=true; gPath.add(sp);
+    /* 相鄰節點間的連接類型（興奮/抑制）標記 */
+    if(i<pw.nodes.length-1){
+      const e=(pw.edges||[]).find(e=>e.from===n.id&&e.to===pw.nodes[i+1].id);
+      if(e){ const rc=REL[e.rel]||REL._unk;
+        const mk=new THREE.Mesh(new THREE.SphereGeometry(4.6,10,8),
+          new THREE.MeshBasicMaterial({color:rc[0]}));
+        mk.position.copy(pts[i].clone().lerp(pts[i+1],.5)); gPath.add(mk); }
+    }
+  });
+  /* 傳導脈衝 */
+  for(let i=0;i<3;i++){
+    const p=new THREE.Mesh(new THREE.SphereGeometry(R*2.9,18,14),
+      new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.95}));
+    const h=new THREE.Mesh(new THREE.SphereGeometry(R*5.4,18,14),
+      new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.30,depthWrite:false}));
+    p.userData.h=h; p.userData.off=i/3; gPath.add(p); gPath.add(h); pulses.push(p);
+  }
+  fitTo(cp);
+}
+
+/* 全部路徑總覽 */
+function drawAll(){
+  clearG(gAll);
+  for(const m of D.modalities) for(const pw of m.pathways){
+    const cp=dedup(pw.nodes.map(n=>toV(n.xyz)));
+    if(cp.length<2) continue;
+    gAll.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(cp),
+      new THREE.LineBasicMaterial({color:m.color, transparent:true, opacity:.55})));
+  }
+}
+
+/* ══════════ 選單 ══════════ */
+const menu=$("#menu");
+D.modalities.forEach(m=>{
+  const box=document.createElement("div"); box.className="mod"; box.style.setProperty("--mc",m.color);
+  const b=document.createElement("button");
+  b.innerHTML=`<span class="ic">${m.icon}</span><span>${m.name}</span>
+    <span class="ct">${m.pathways.length}</span><span class="cv">▶</span>`;
+  b.onclick=()=>{ document.querySelectorAll(".mod").forEach(x=>{if(x!==box)x.classList.remove("open")});
+                 box.classList.toggle("open"); };
+  box.appendChild(b);
+  const pw=document.createElement("div"); pw.className="pw";
+  m.pathways.forEach((p,i)=>{
+    const e=document.createElement("button"); e.style.setProperty("--mc",m.color);
+    e.innerHTML=`${i+1}. ${p.name}<i>🎯 ${p.behavior||""}</i>`;
+    e.onclick=ev=>{ ev.stopPropagation(); select(m,p,e); };
+    pw.appendChild(e);
+  });
+  box.appendChild(pw); menu.appendChild(box);
+});
+
+function select(m,p,btn){
+  document.querySelectorAll(".pw button").forEach(x=>x.classList.remove("on"));
+  btn.classList.add("on"); btn.closest(".mod").classList.add("open");
+  cur={m,p}; drawPath(m,p);
+  $("#cbO").checked=false; gAll.visible=false;
+  $("#ttl").innerHTML=`${m.icon} ${m.name}｜${p.name}<small>🎯 行為輸出：${p.behavior||"—"}　・　${p.nodes.length} 個神經元層級</small>`;
+  /* 右側資訊 */
+  let h=`<p><b style="color:${m.color}">受器：</b>${m.receptor}</p><p>${m.summary}</p>`;
+  h+=`<p style="border-left:3px solid ${m.color};padding-left:9px;background:#0c1426;border-radius:0 6px 6px 0">
+      <b>行 為：</b>${p.behavior}</p>`;
+  p.nodes.forEach((n,i)=>{
+    const d=DIM[n.dim]||["#cbd5e1","—"], c=d[0];
+    h+=`<div class="node" style="--nc:${c}" data-i="${i}">
+      <div class="n1">${i+1}. ${n.label}</div>
+      <div class="n2">📍 ${n.region||"—"}　｜　${n.cls||"—"}</div>
+      <span class="tag" style="background:${c}22;color:${c}">${d[1]}</span>
+      ${n.note?`<div class="n3">${n.note}</div>`:""}</div>`;
+    if(i<p.nodes.length-1){
+      const e=(p.edges||[]).find(e=>e.from===n.id&&e.to===p.nodes[i+1].id);
+      const r=e?(REL[e.rel]||REL._unk):REL._unk;
+      h+=`<div class="rel">▼ <span style="color:${r[0]}">${r[1]}</span>${e&&e.note?"　"+e.note:""}</div>`;
+    }
+  });
+  $("#info").innerHTML=h;
+  $("#info").querySelectorAll(".node").forEach(el=>el.onclick=()=>{
+    const n=p.nodes[+el.dataset.i]; focus(toV(n.xyz), 260);
+    $("#info").querySelectorAll(".node").forEach(x=>x.classList.remove("on")); el.classList.add("on");
+  });
+}
+
+/* ══════════ 相機 ══════════ */
+let anim=null;
+function fitTo(pts){
+  const bb=new THREE.Box3(); pts.forEach(p=>bb.expandByPoint(p));
+  const c=bb.getCenter(new THREE.Vector3());
+  const sz=Math.max(bb.getSize(new THREE.Vector3()).length(), 120);
+  focus(c, sz*1.75);
+}
+function focus(t, r){ anim={t0:orbit.t.clone(), r0:orbit.r, t1:t.clone(), r1:Math.max(90,Math.min(2400,r)), k:0}; }
+function setView(v){
+  const V={front:[0,Math.PI/2],back:[Math.PI,Math.PI/2],left:[Math.PI/2,Math.PI/2],
+           right:[-Math.PI/2,Math.PI/2],top:[0,.06],bottom:[0,Math.PI-.06]}[v];
+  anim={t0:orbit.t.clone(),r0:orbit.r,t1:orbit.t.clone(),r1:orbit.r,k:0};
+  orbit.th=V[0]; orbit.ph=V[1];
+}
+document.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>setView(b.dataset.v));
+
+/* ══════════ 滑鼠／觸控 ══════════ */
+let drag=null;
+canvas.addEventListener("mousedown",e=>drag={b:e.button,x:e.clientX,y:e.clientY});
+addEventListener("mouseup",()=>drag=null);
+addEventListener("mousemove",e=>{ if(!drag)return;
+  const dx=e.clientX-drag.x, dy=e.clientY-drag.y; drag.x=e.clientX; drag.y=e.clientY;
+  if(drag.b===0){ orbit.th-=dx*.0075; orbit.ph=Math.max(.04,Math.min(Math.PI-.04,orbit.ph-dy*.0075)); }
+  else { const s=orbit.r/1400;
+    const R=new THREE.Vector3().setFromMatrixColumn(cam.matrix,0), U=new THREE.Vector3().setFromMatrixColumn(cam.matrix,1);
+    orbit.t.addScaledVector(R,-dx*s).addScaledVector(U,dy*s); }
+});
+canvas.addEventListener("wheel",e=>{e.preventDefault(); orbit.r=Math.max(70,Math.min(2600,orbit.r*(1+e.deltaY*.0011)));},{passive:false});
+canvas.addEventListener("contextmenu",e=>e.preventDefault());
+let pinch=0;
+canvas.addEventListener("touchstart",e=>{ if(e.touches.length===1) drag={b:0,x:e.touches[0].clientX,y:e.touches[0].clientY};
+  else if(e.touches.length===2) pinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); },{passive:true});
+canvas.addEventListener("touchmove",e=>{ e.preventDefault();
+  if(e.touches.length===1&&drag){ const dx=e.touches[0].clientX-drag.x, dy=e.touches[0].clientY-drag.y;
+    drag.x=e.touches[0].clientX; drag.y=e.touches[0].clientY;
+    orbit.th-=dx*.008; orbit.ph=Math.max(.04,Math.min(Math.PI-.04,orbit.ph-dy*.008)); }
+  else if(e.touches.length===2){ const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    if(pinch) orbit.r=Math.max(70,Math.min(2600,orbit.r*pinch/d)); pinch=d; } },{passive:false});
+canvas.addEventListener("touchend",()=>{drag=null;pinch=0;});
+
+/* ══════════ 控制項 ══════════ */
+$("#op").oninput=e=>matCNS.opacity=e.target.value/100;
+$("#th").oninput=()=>{ if(cur) drawPath(cur.m,cur.p); };
+$("#cp").oninput=applyClip; $("#cax").onchange=applyClip;
+function applyClip(){
+  const ax=+$("#cax").value;
+  if(ax<0){ clipPlane.constant=1e9; clipPlane.normal.set(0,-1,0); gPath.visible=true; return; }
+  const lim=[200,340,120][ax], v=(+$("#cp").value)/100*lim;
+  clipPlane.normal.set(ax===0?-1:0, ax===1?-1:0, ax===2?-1:0);
+  clipPlane.constant=v;
+}
+$("#cbR").onchange=e=>{ gRegion.visible=e.target.checked; syncLbl(); };
+$("#cbL").onchange=syncLbl;
+function syncLbl(){ gRegion.children.forEach(o=>{ if(o.isSprite) o.visible=$("#cbL").checked; }); }
+$("#cbA").onchange=e=>autoRot=e.target.checked;
+$("#cbO").onchange=e=>{ gAll.visible=e.target.checked; if(e.target.checked&&!gAll.children.length) drawAll(); };
+let autoRot=false;
+$("#bPlay").onclick=e=>{ playing=!playing; e.target.textContent=playing?"⏸ 暫停":"▶ 傳導"; };
+$("#bFit").onclick=()=>{ if(cur) fitTo(cur.p.nodes.map(n=>toV(n.xyz))); };
+$("#bReset").onclick=()=>{ orbit.t.set(0,0,0); orbit.r=760; orbit.th=.55; orbit.ph=1.15;
+  $("#cax").value="-1"; applyClip(); };
+addEventListener("keydown",e=>{ if(e.code==="Space"){e.preventDefault(); $("#bPlay").click();}
+  if(e.key==="r"||e.key==="R") $("#bReset").click(); });
+
+/* ══════════ HUD／圖例／來源 ══════════ */
+$("#hud").innerHTML=`<b>座標系</b>　+X 蟲體右側・+Y 腹側・+Z 前側（原點=中樞腦中心，1 單位 = 1 µm）<br>
+  <b>模型</b>　腦 + 視葉 + 頸連帶 + 胸/腹神經索，水密單一面，可直接 3D 列印（cns_fly.stl）<br>
+  <b>瓶頸</b>　${D.bottleneck.title}：DN 限制腦→VNC、AN 限制反向流量`;
+$("#lgd").innerHTML=Object.entries(DIM).map(([k,v])=>`<span class="dot" style="background:${v[0]}"></span>${v[1]}　`).join("")
+  +`<br>`+Object.entries(REL).map(([k,v])=>`<span class="dot" style="background:${v[0]};border-radius:2px"></span>連接：${v[1]}　`).join("");
+$("#src").innerHTML=`${D.meta.source}<br>${D.meta.dataset}<br><br>${D.meta.note}<br><br>
+  解剖依據與座標推定：notes/anatomy_notes.md（含 PDF 行號出處）`;
+
+/* ══════════ 主迴圈 ══════════ */
+function resize(){ const w=stage.clientWidth, h=stage.clientHeight;
+  renderer.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }
+addEventListener("resize",resize); resize();
+
+let last=performance.now();
+(function loop(now){
+  const dt=Math.min(.05,(now-last)/1000); last=now;
+  if(autoRot) orbit.th += dt*.28;
+  if(anim){ anim.k=Math.min(1,anim.k+dt*2.6); const k=1-Math.pow(1-anim.k,3);
+    orbit.t.lerpVectors(anim.t0,anim.t1,k); orbit.r=anim.r0+(anim.r1-anim.r0)*k;
+    if(anim.k>=1) anim=null; }
+  camUpdate();
+  gPath.children.forEach(o=>{ if(o.userData.ring) o.lookAt(cam.position); });
+  if(playing && curCurve){ tGlob=(tGlob+dt*(+$("#sp").value)/1000)%1;
+    pulses.forEach(p=>{ const t=(tGlob+p.userData.off)%1; const pt=curCurve.getPointAt(t);
+      p.position.copy(pt); p.userData.h.position.copy(pt);
+      const f=.55+.45*Math.sin(t*Math.PI); p.material.opacity=f; p.userData.h.material.opacity=.30*f; }); }
+  renderer.render(scene,cam);
+  requestAnimationFrame(loop);
+})(performance.now());
+</script>
+</body>
+</html>
